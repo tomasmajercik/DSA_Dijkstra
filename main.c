@@ -33,8 +33,57 @@ void search(Graph *graph, int source, int destination)
     int *predecessors = (int*) malloc(sizeof (int) * graph->size);
     int *visited = (int*) malloc(sizeof (int) * graph->size);
 
+    //######## initialization #####//
+    for (int i = 0; i < graph->size; i++)
+    {
+        distance[i] = INFINITY;
+        predecessors[i] = -1;
+        visited[i] = 0;
+    }
+    distance[source] = 0; // the initial vertex is 0
+    //#############################//
+
+    for (int loop = 1; loop < graph->size; loop++)
+    {
+        int minDistance = INFINITY;
+        int minIndex = 0;
+
+        for (int i = 0; i < graph->size; i++)
+        {
+            if (visited[i] == 0 && distance[i] <= minDistance)
+            {
+                minDistance = distance[i];
+                minIndex = i;
+            }
+        }
+
+        int MINimalIndex = minIndex;
+        visited[MINimalIndex] = 1;
+
+        for (int i = 0; i < graph->size; i++)
+        {
+            if(!visited[i] && graph->weight[MINimalIndex][i] && distance[MINimalIndex]!= INFINITY &&
+               distance[MINimalIndex] + graph->weight[MINimalIndex][i] < distance[i])
+            {
+                distance[i] = distance[MINimalIndex] + graph->weight[MINimalIndex][i];
+                predecessors[i] = MINimalIndex;
+            }
+        }
 
 
+    }
+
+    int current = destination;
+    while (current != -1)
+    {
+        printf("%d ", current);
+        current = predecessors[current]; // Move to predecessor in the shortest path
+    }
+    printf("\n");
+
+    free(distance);
+    free(visited);
+    free(predecessors);
 }
 
 
@@ -50,7 +99,6 @@ int main()
         scanf(" (%d , %d , %d) ", &source, &destination, &weight);
         graph->weight[source][destination] = weight;
     }
-    printf("fertig");
     char DO;
 
     while((scanf(" %c", &DO) == 1))
