@@ -15,6 +15,5 @@ int main()
 {
     printf("Hello, World!\n");
     // please
-    //
     return 0;
 }
