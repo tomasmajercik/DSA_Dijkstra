@@ -27,27 +27,30 @@ Graph * createGraph(int size)
     return graph;
 }
 
-void search(Graph *graph, int source, int destination)
+void search(Graph* graph, int source, int destination)
 {
-    int *distance = (int*) malloc(sizeof (int) * graph->size);
-    int *predecessors = (int*) malloc(sizeof (int) * graph->size);
-    int *visited = (int*) malloc(sizeof (int) * graph->size);
+    if(graph == NULL)
+        return;
 
-    //######## initialization #####//
+    int* distance = (int*)malloc(sizeof(int) * graph->size);
+    int* predecessors = (int*)malloc(sizeof(int) * graph->size);
+    int* visited = (int*)malloc(sizeof(int) * graph->size);
+
+    // Initialization
     for (int i = 0; i < graph->size; i++)
     {
         distance[i] = INFINITY;
         predecessors[i] = -1;
         visited[i] = 0;
     }
-    distance[source] = 0; // the initial vertex is 0
-    //#############################//
+    distance[source] = 0;
 
-    for (int loop = 1; loop < graph->size; loop++)
+    for (int loop = 0; loop < graph->size; loop++)
     {
         int minDistance = INFINITY;
-        int minIndex = 0;
+        int minIndex = -1;
 
+        // Find the vertex with the minimum distance among unvisited vertices
         for (int i = 0; i < graph->size; i++)
         {
             if (visited[i] == 0 && distance[i] <= minDistance)
@@ -57,63 +60,71 @@ void search(Graph *graph, int source, int destination)
             }
         }
 
-        int MINimalIndex = minIndex;
-        visited[MINimalIndex] = 1;
 
+        int minVertex = minIndex;
+        visited[minVertex] = 1;
+
+        // Relaxation
         for (int i = 0; i < graph->size; i++)
         {
-            if(!visited[i] && graph->weight[MINimalIndex][i] && distance[MINimalIndex]!= INFINITY &&
-               distance[MINimalIndex] + graph->weight[MINimalIndex][i] < distance[i])
+            if (!visited[i] && graph->weight[minVertex][i] &&
+                distance[minVertex] + graph->weight[minVertex][i] < distance[i])
             {
-                distance[i] = distance[MINimalIndex] + graph->weight[MINimalIndex][i];
-                predecessors[i] = MINimalIndex;
+                distance[i] = distance[minVertex] + graph->weight[minVertex][i];
+                predecessors[i] = minVertex;
             }
         }
-
-
     }
 
+    printf("%d: [", distance[destination]);
+
+    // Store the vertices in the path
     int current = destination;
     while (current != -1)
     {
-        printf("%d ", current);
-        current = predecessors[current]; // Move to predecessor in the shortest path
+        printf("%d", current);
+        current = predecessors[current];
+        if (current != -1)
+            printf(", ");
     }
-    printf("\n");
+    printf("]\n");
+
+
 
     free(distance);
-    free(visited);
     free(predecessors);
+    free(visited);
 }
+
+
 
 
 int main()
 {
     int vertexes, edges;
+    int source, destination, weight;
     scanf("%d %d", &vertexes, &edges);
-    Graph *graph = createGraph(vertexes);
+    Graph* graph = createGraph(vertexes);
 
-    for(int i = 1; i < edges; i++)
+    for (int i = 0; i < edges; i++)
     {
-        int source, destination, weight;
-        scanf(" (%d , %d , %d) ", &source, &destination, &weight);
+        scanf(" (%d, %d, %d)", &source, &destination, &weight);
         graph->weight[source][destination] = weight;
     }
     char DO;
 
-    while((scanf(" %c", &DO) == 1))
+    while ((scanf(" %c", &DO) == 1))
     {
-        switch(DO)
+        switch (DO)
         {
             case 's':
-                int source, destination;
                 scanf(" %d %d", &source, &destination);
                 search(graph, source, destination);
                 break;
         }
     }
 
-    /////// Freeing stuff ///////
+    // Freeing memory
     for (int i = 0; i < vertexes; i++)
     {
         free(graph->weight[i]);
@@ -122,3 +133,4 @@ int main()
     free(graph);
     return 0;
 }
+
