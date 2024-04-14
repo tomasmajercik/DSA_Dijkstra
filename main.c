@@ -1,136 +1,123 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define INFINITY 2147483646
+//#define INFINITY 2147483646
+#define INFINITY 2000
 
-typedef struct GRAPH
+
+typedef struct Edge
+{
+    int dest;
+    int weight;
+    struct Edge *next;
+} Edge;
+
+typedef struct Graph
 {
     int size;
-    int** weight;
-}Graph;
+    Edge *next;
+} Graph;
 
-Graph * createGraph(int size)
+Graph **createGraph(int vertexes)
 {
+    Graph **graph = (Graph **)malloc(sizeof(Graph *) * vertexes);
+    if (graph == NULL)
+        exit(1);
 
-    Graph *graph = (Graph*)malloc(sizeof (Graph));
-    graph->size = size;
-
-    graph->weight = (int**)malloc(sizeof (int*) * size);
-    for (int i = 0; i < size; i++)
+    for (int i = 0; i < vertexes; i++)
     {
-        graph->weight[i] = (int*) malloc(sizeof (int) * size);
-        for (int j = 0; j < size; j++)
-        {
-            graph->weight[i][j] = INFINITY;
-        }
+        graph[i] = (Graph *)malloc(sizeof(Graph));
+        if (graph[i] == NULL)
+            exit(1);
+        graph[i]->size = vertexes;
+        graph[i]->next = NULL;
     }
+
     return graph;
 }
 
-void search(Graph* graph, int source, int destination)
+void insertEdge(Graph **graph, int source, int destination, int weight)
 {
-    if(graph == NULL)
+    if (graph == NULL)
         return;
 
-    int* distance = (int*)malloc(sizeof(int) * graph->size);
-    int* predecessors = (int*)malloc(sizeof(int) * graph->size);
-    int* visited = (int*)malloc(sizeof(int) * graph->size);
+    // Create a new edge node
+    Edge *newEdge = (Edge *)malloc(sizeof(Edge));
+    newEdge->dest = destination;
+    newEdge->weight = weight;
+    newEdge->next = NULL;
 
-    // Initialization
-    for (int i = 0; i < graph->size; i++)
-    {
-        distance[i] = INFINITY;
-        predecessors[i] = -1;
-        visited[i] = 0;
-    }
-    distance[source] = 0;
-
-    for (int loop = 0; loop < graph->size; loop++)
-    {
-        int minDistance = INFINITY;
-        int minIndex = -1;
-
-        // Find the vertex with the minimum distance among unvisited vertices
-        for (int i = 0; i < graph->size; i++)
-        {
-            if (visited[i] == 0 && distance[i] <= minDistance)
-            {
-                minDistance = distance[i];
-                minIndex = i;
-            }
-        }
-
-
-        int minVertex = minIndex;
-        visited[minVertex] = 1;
-
-        // Relaxation
-        for (int i = 0; i < graph->size; i++)
-        {
-            if (!visited[i] && graph->weight[minVertex][i] &&
-                distance[minVertex] + graph->weight[minVertex][i] < distance[i])
-            {
-                distance[i] = distance[minVertex] + graph->weight[minVertex][i];
-                predecessors[i] = minVertex;
-            }
-        }
-    }
-
-    printf("%d: [", distance[destination]);
-
-    // Store the vertices in the path
-    int current = destination;
-    while (current != -1)
-    {
-        printf("%d", current);
-        current = predecessors[current];
-        if (current != -1)
-            printf(", ");
-    }
-    printf("]\n");
-
-
-
-    free(distance);
-    free(predecessors);
-    free(visited);
 }
 
+void search(Graph *graph, int source, int destination)
+{
+    int N = graph->size;
+    int visited[N];
+    int weight[N];
+
+    for (int i = 0; i < N; i++)
+    {
+        visited[i] = 0;
+        weight[i] = INFINITY;
+    }
+
+    int PriorityQueue[N];
+    int front = 0, rear = 0;
+
+    PriorityQueue[rear] = source;
+
+    int u;
+    while (front <= rear)
+    {
+
+    }
 
 
+}
 
 int main()
 {
     int vertexes, edges;
     int source, destination, weight;
     scanf("%d %d", &vertexes, &edges);
-    Graph* graph = createGraph(vertexes);
 
+    // Create the graph
+    Graph **graph = createGraph(vertexes);
+
+    // Insert edges
     for (int i = 0; i < edges; i++)
     {
-        scanf(" (%d, %d, %d)", &source, &destination, &weight);
-        graph->weight[source][destination] = weight;
+        scanf(" (%d , %d , %d)", &source, &destination, &weight);
+        insertEdge(graph, source, destination, weight);
     }
-    char DO;
 
-    while ((scanf(" %c", &DO) == 1))
+    // Process queries
+    char DO;
+    while (scanf(" %c", &DO) == 1)
     {
         switch (DO)
         {
             case 's':
                 scanf(" %d %d", &source, &destination);
-                search(graph, source, destination);
+                // Search function logic goes here
                 break;
         }
     }
 
-    // Freeing memory
+    // Free memory for each graph
     for (int i = 0; i < vertexes; i++)
     {
-        free(graph->weight[i]);
+        Edge *current = graph[i]->next;
+        while (current != NULL)
+        {
+            Edge *temp = current;
+            current = current->next;
+            free(temp);
+        }
+        free(graph[i]);
     }
-    free(graph->weight);
+
+    // Free memory for the array of graphs
     free(graph);
     return 0;
 }
-
