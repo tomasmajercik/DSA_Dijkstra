@@ -37,6 +37,7 @@ Graph **createGraph(int vertexes)
     return graph;
 }
 
+
 void insertEdge(Graph **graph, int source, int destination, int weight)
 {
     if (graph == NULL)
@@ -110,78 +111,11 @@ void printPath(int *previous, int source, int destination)
     }
     else
     {
-        printPath(previous, source, previous[destination]);
+        printPath(previous, source,previous[destination]);
         printf(", %d", destination);
     }
 }
 void search(Graph **graph, int vertexes, int source, int destination)
-{
-    int visited[vertexes];
-    int weight[vertexes];
-
-    // Initialize arrays
-    for (int i = 0; i < vertexes; i++)
-    {
-        visited[i] = 0;
-        weight[i] = INFINITY;
-    }
-
-    // Initialize priority queue
-    int PriorityQueue[vertexes];
-    int front = 0, rear = 0;
-
-    // Start from the source node
-    PriorityQueue[rear++] = source;
-    weight[source] = 0;
-
-    while (front < rear)
-    {
-        int u = PriorityQueue[front++];
-
-        // Mark the current node as visited
-        visited[u] = 1;
-
-        if (graph[u]->next == NULL)
-        {
-            continue; // Skip to the next iteration if there are no edges for u
-        }
-
-        // Traverse through all adjacent vertices of u
-        Edge *current = graph[u]->next;
-        while (current != NULL)
-        {
-            int v = current->dest;
-            int w = current->weight;
-
-            // If vertex v is not visited and there's a shorter path to v through u
-            if (!visited[v] && (weight[u] + w) < weight[v])
-            {
-                // Update the shortest distance to v
-                weight[v] = weight[u] + w;
-                graph[v]->next->parent = u;  // Update parent of v
-                PriorityQueue[rear++] = v;
-            }
-            current = current->next;
-        }
-    }
-
-    // Print the shortest path from source to destination (no need for printPath)
-    int current = destination;
-    if (destination == source) {
-        printf("%d", source);
-    } else if (graph[destination]->next->parent == -1) {
-        printf("search failed");
-    } else {
-        printf("%d: [", weight[destination]);
-        while (current != source) {
-            printf("%d, ", current);
-            current = graph[current]->next->parent;
-        }
-        printf("%d]\n", source);
-    }
-}
-
-void ssearch(Graph **graph, int vertexes, int source, int destination)
 {
     int visited[vertexes];
     int weight[vertexes];
@@ -207,9 +141,6 @@ void ssearch(Graph **graph, int vertexes, int source, int destination)
     {
         int u = PriorityQueue[front++];
 
-        // Mark the current node as visited
-        visited[u] = 1;
-
         // Traverse through all adjacent vertices of u
         Edge *current = graph[u]->next;
         while (current != NULL)
@@ -226,6 +157,9 @@ void ssearch(Graph **graph, int vertexes, int source, int destination)
 
                 // Enqueue v to the priority queue
                 PriorityQueue[rear++] = v;
+
+                // Mark v as visited
+                visited[v] = 1;
             }
             current = current->next;
         }
@@ -248,7 +182,6 @@ void ssearch(Graph **graph, int vertexes, int source, int destination)
     }
     printf("]\n");
 }
-
 void update(Graph **graph, int source, int destination, int newWeight)
 {
     if (graph == NULL)
@@ -259,19 +192,33 @@ void update(Graph **graph, int source, int destination, int newWeight)
     {
         if (edge->dest == destination)
         {
-            if ((edge->weight + newWeight) >= 0)
+            // Check if the new weight will be non-negative after the update
+            if (edge->weight + newWeight >= 0)
             {
-                edge->weight = newWeight;
-                return;
+                edge->weight += newWeight;
             }
             else
             {
-                printf("update %d %d failed", source, destination);
+                printf("update %d %d failed\n", source, destination);
+                return; // Break out of the loop if update fails
             }
+            break; // Break out of the loop after updating
         }
         edge = edge->next;
     }
+    edge = graph[destination]->next;
+    while (edge != NULL)
+    {
+        if (edge->dest == source)
+        {
+            edge->weight += newWeight;
+            return; // Break out of the loop after updating
+        }
+        edge = edge->next;
+    }
+    printf("update failed: edge not found\n");
 }
+
 
 
 void delete(Graph **graph, int source, int destination)
@@ -293,7 +240,7 @@ void delete(Graph **graph, int source, int destination)
                 prev->next = current->next;
             }
             free(current);
-            break; // Break after deleting the edge from source to destination
+            return; // Break out of the loop after freeing memory
         }
         prev = current;
         current = current->next;
@@ -314,12 +261,12 @@ void delete(Graph **graph, int source, int destination)
                 prev->next = current->next;
             }
             free(current);
-            return;
+            return; // Break out of the loop after freeing memory
         }
         prev = current;
         current = current->next;
     }
-    printf("delete failed");
+    printf("delete failed\n");
 }
 
 
@@ -357,7 +304,7 @@ int main()
         insertEdge(graph, source, destination, weight);
     }
 //    printf("\n");
-//    visualizeGraph(graph, vertexes);
+    visualizeGraph(graph, vertexes);
     // Process queries
     char DO;
     while (scanf(" %c", &DO) == 1)
