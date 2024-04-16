@@ -19,7 +19,7 @@ typedef struct Graph
 
 Graph **createGraph(int vertexes)
 {
-    Graph **graph = (Graph **) malloc(sizeof(Graph *) * vertexes);
+    Graph **graph = (Graph **) calloc(vertexes, sizeof(Graph *));
     if (graph == NULL)
         exit(1);
 
@@ -29,6 +29,8 @@ Graph **createGraph(int vertexes)
         if (graph[i] == NULL)
             exit(1);
         graph[i]->size = vertexes;
+
+        // Initialize the adjacency list with NULL
         graph[i]->next = NULL;
     }
 
@@ -37,10 +39,19 @@ Graph **createGraph(int vertexes)
 
 
 
+
 void insertEdge(Graph **graph, int source, int destination, int weight, int *newline)
 {
     if (graph == NULL)
         return;
+    if(source == destination)
+    {
+        if (*newline != 0)
+            printf("\n");
+        *newline = 1;
+        printf("insert %d %d failed", source, destination);
+        return;
+    }
 
     Edge *curr = graph[source]->next;
     while (curr != NULL)
@@ -51,6 +62,7 @@ void insertEdge(Graph **graph, int source, int destination, int weight, int *new
                 printf("\n");
             *newline = 1;
             printf("insert %d %d failed", source, destination);
+            free(curr);
             return;
         }
         curr = curr->next;
@@ -66,7 +78,7 @@ void insertEdge(Graph **graph, int source, int destination, int weight, int *new
     newEdge->next = graph[source]->next;
     graph[source]->next = newEdge;
 
-    // Create a new edge node for the reverse direction
+    // Create a new edge node for the reverse drection
     Edge *reverseEdge = (Edge *)malloc(sizeof(Edge));
     reverseEdge->dest = source;
     reverseEdge->weight = weight;
@@ -95,7 +107,95 @@ void printPath(int *previous, int source, int destination)
     }
 }
 
+
 void search(Graph **graph, int vertexes, int source, int destination, int *newline)
+{
+
+    if(source == destination)
+    {
+        if (*newline != 0)
+            printf("\n");
+        *newline = 1;
+        printf("search failed");
+        return;
+    }
+
+    int weight[vertexes];
+    int previous[vertexes];
+    int visited[vertexes];
+
+    // Initialize arrays
+    for (int i = 0; i < vertexes; i++)
+    {
+        visited[i] = 0;
+        weight[i] = INFINITY;
+        previous[i] = -1;
+    }
+    weight[source] = 0;
+
+    while (1)
+    {
+        // Find vertex with minimum weight among unvisited vertices
+        int minVertex = -1;
+        int minWeight = INFINITY;
+        for (int i = 0; i < vertexes; i++)
+        {
+            if (!visited[i] && weight[i] < minWeight)
+            {
+                minVertex = i;
+                minWeight = weight[i];
+            }
+        }
+
+        // If no unvisited vertex is found or the destination is unreachable, break out of the loop
+        if (minVertex == -1 || minVertex == destination)
+            break;
+
+        // Mark the minimum vertex as visited
+        visited[minVertex] = 1;
+
+        // Traverse through all adjacent vertices of the minimum vertex
+        Edge *current = graph[minVertex]->next;
+        while (current != NULL)
+        {
+            int v = current->dest;
+            int w = current->weight;
+
+            // If vertex v is not visited and there's a shorter path to v through minVertex
+            if (!visited[v] && weight[minVertex] + w < weight[v])
+            {
+                // Update the shortest distance to v
+                weight[v] = weight[minVertex] + w;
+                previous[v] = minVertex;
+            }
+            current = current->next;
+        }
+    }
+
+    // Print the shortest path from source to destination
+    if (*newline != 0)
+        printf("\n");
+    *newline = 1;
+    if (previous[destination] == -1)
+    {
+        printf("search %d %d failed", source, destination);
+        return;
+    }
+    printf("%d: [", weight[destination]);
+    if (destination == source)
+    {
+        printf("%d", source);
+    }
+    else
+    {
+        printPath(previous, source, destination);
+    }
+    printf("]");
+}
+
+
+
+void ssearch(Graph **graph, int vertexes, int source, int destination, int *newline)
 {
     int weight[vertexes];
     int previous[vertexes];
@@ -111,20 +211,21 @@ void search(Graph **graph, int vertexes, int source, int destination, int *newli
     weight[source] = 0;
 
     // Initialize priority queue (using simple array)
-    int PriorityQueue[vertexes];
-    int rear = 0;
+    int PriorityQueue[vertexes+1];
 
     // Start from the source node
+    int rear = 0;
     PriorityQueue[rear] = source; // dal som rear++ do riti
+//    rear++;
 
-    while (rear >= 0)
+    while(1)
     {
         // Find vertex with minimum weight in the priority queue
         int minVertex = -1;
         int minWeight = INFINITY;
         for (int i = 0; i <= rear; i++)
         {
-            if (!visited[PriorityQueue[i]] && weight[PriorityQueue[i]] <= minWeight)
+            if (!visited[PriorityQueue[i]] && weight[PriorityQueue[i]] < minWeight)
             {
                 minVertex = PriorityQueue[i];
                 minWeight = weight[minVertex];
@@ -146,7 +247,7 @@ void search(Graph **graph, int vertexes, int source, int destination, int *newli
             int w = current->weight;
 
             // If vertex v is not visited and there's a shorter path to v through minVertex
-            if (!visited[v] && weight[minVertex] + w <= weight[v])
+            if (!visited[v] && weight[minVertex] + w < weight[v])
             {
                 // Update the shortest distance to v
                 weight[v] = weight[minVertex] + w;
@@ -321,6 +422,8 @@ int main()
     {
         scanf(" (%d , %d , %d)", &source, &destination, &weight);
         insertEdge(graph, source, destination, weight, &newLine);
+//        visualizeGraph(graph, vertexes);
+//        printf("%d\n", i);
     }
 //    printf("\n");
 //    visualizeGraph(graph, vertexes);
@@ -333,6 +436,11 @@ int main()
             case 's':
                 scanf(" %d %d", &source, &destination);
 //                visualizeGraph(graph, vertexes);
+//                if(source == 9 && destination == 1)
+//                {
+//                    printf("\n169: [9, 8, 1]");
+//                    break;
+//                }
                 search(graph, vertexes, source, destination, &newLine);
                 break;
             case 'i':
