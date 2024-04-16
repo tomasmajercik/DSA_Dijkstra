@@ -62,7 +62,7 @@ void insertEdge(Graph **graph, int source, int destination, int weight, int *new
                 printf("\n");
             *newline = 1;
             printf("insert %d %d failed", source, destination);
-            free(curr);
+//            free(curr);
             return;
         }
         curr = curr->next;
@@ -78,7 +78,7 @@ void insertEdge(Graph **graph, int source, int destination, int weight, int *new
     newEdge->next = graph[source]->next;
     graph[source]->next = newEdge;
 
-    // Create a new edge node for the reverse drection
+    // Create a new edge node for the reverse
     Edge *reverseEdge = (Edge *)malloc(sizeof(Edge));
     reverseEdge->dest = source;
     reverseEdge->weight = weight;
@@ -182,14 +182,9 @@ void search(Graph **graph, int vertexes, int source, int destination, int *newli
         return;
     }
     printf("%d: [", weight[destination]);
-    if (destination == source)
-    {
-        printf("%d", source);
-    }
-    else
-    {
-        printPath(previous, source, destination);
-    }
+
+    printPath(previous, source, destination);
+
     printf("]");
 }
 
@@ -339,6 +334,16 @@ void update(Graph **graph, int source, int destination, int newWeight, int *newl
 
 void delete(Graph **graph, int source, int destination, int *newline)
 {
+
+    if(source == destination)
+    {
+        if (*newline != 0)
+            printf("\n");
+        *newline = 1;
+        printf("delete %d %d failed", source, destination);
+        return;
+    }
+
     if (graph == NULL)
         return;
 
@@ -422,7 +427,7 @@ int main()
     {
         scanf(" (%d , %d , %d)", &source, &destination, &weight);
         insertEdge(graph, source, destination, weight, &newLine);
-//        visualizeGraph(graph, vertexes);
+        // visualizeGraph(graph, vertexes);
 //        printf("%d\n", i);
     }
 //    printf("\n");
