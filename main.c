@@ -3,7 +3,6 @@
 
 #define INFINITY 2147483646
 
-
 typedef struct Edge
 {
     int dest;
@@ -16,6 +15,20 @@ typedef struct Graph
     int size;
     Edge *next;
 } Graph;
+
+typedef struct NodeInBinHeap
+{
+    int vertex;
+    int weight;
+}NodeInBinHeap;
+
+typedef struct BinHeap
+{
+    int capacity;
+    int actualSize;
+    NodeInBinHeap *nodeInBinHeap;
+}BinHeap;
+
 
 Graph **createGraph(int vertexes)
 {
@@ -37,9 +50,86 @@ Graph **createGraph(int vertexes)
     return graph;
 }
 
+////// Binary heap functions/////
+BinHeap *createBinHeap(int capacity)
+{
+    BinHeap *heap = (BinHeap *)malloc(sizeof(BinHeap));
+    if (heap == NULL)
+        exit(1);
+
+    heap->capacity = capacity*2;
+    heap->actualSize = 0;
+    heap->nodeInBinHeap = (NodeInBinHeap *)malloc(2*capacity * sizeof(NodeInBinHeap));
+
+    return heap;
+}
+void insertInBinHeap(BinHeap *heap, int vertex, int weight)
+{
+    int index = heap->actualSize;
+    heap->nodeInBinHeap[index].vertex = vertex;
+    heap->nodeInBinHeap[index].weight = weight;
+    heap->actualSize++;
+
+    // Restore heap
+    while (index > 0 && heap->nodeInBinHeap[index].weight < heap->nodeInBinHeap[(index - 1) / 2].weight)
+    {   //swap
+        NodeInBinHeap temp = heap->nodeInBinHeap[index];
+        heap->nodeInBinHeap[index] = heap->nodeInBinHeap[(index - 1) / 2];
+        heap->nodeInBinHeap[(index - 1) / 2] = temp;
+        index = (index - 1) / 2;
+    }
+}
+void heapify(BinHeap *heap, int index)
+{
+    int smallest = index;
+    int left = 2 * index + 1;
+    int right = 2 * index + 2;
+
+    // Find the smallest among the current node, its left child, and its right child
+    if (left < heap->actualSize && heap->nodeInBinHeap[left].weight < heap->nodeInBinHeap[smallest].weight)
+        smallest = left;
+    if (right < heap->actualSize && heap->nodeInBinHeap[right].weight < heap->nodeInBinHeap[smallest].weight)
+        smallest = right;
+
+    // If the smallest node is not the current node, swap them and continue heapifying
+    if (smallest != index)
+    {
+        NodeInBinHeap temp = heap->nodeInBinHeap[index];
+        heap->nodeInBinHeap[index] = heap->nodeInBinHeap[smallest];
+        heap->nodeInBinHeap[smallest] = temp;
+        heapify(heap, smallest);
+    }
+}
+NodeInBinHeap extractMin(BinHeap *heap)
+{
+    // Extract the minimum node
+    NodeInBinHeap minNode = heap->nodeInBinHeap[0];
+    heap->nodeInBinHeap[0] = heap->nodeInBinHeap[heap->actualSize - 1];
+    heap->actualSize--;
+
+    // Restore heap property
+    heapify(heap, 0);
+
+    return minNode;
+}
+void deleteFromBinHeap(BinHeap *heap, int vertex)
+{
+    // Replace the node to be deleted with the last node
+    heap->nodeInBinHeap[vertex] = heap->nodeInBinHeap[heap->actualSize - 1];
+    heap->actualSize--;
+
+    // Restore heap property
+    heapify(heap, vertex);
+}
+void destroyBinaryHeap(BinHeap* heap)
+{
+    free(heap->nodeInBinHeap);
+    free(heap);
+}
 
 
 
+//// graph functions
 void insertEdge(Graph **graph, int source, int destination, int weight, int *newline)
 {
     if (graph == NULL)
@@ -107,8 +197,87 @@ void printPath(int *previous, int source, int destination)
     }
 }
 
-
 void search(Graph **graph, int vertexes, int source, int destination, int *newline)
+{
+    if (source == destination)
+    {
+        if (*newline != 0)
+            printf("\n");
+        *newline = 1;
+        printf("search failed");
+        return;
+    }
+
+    int weight[vertexes];
+    int previous[vertexes];
+    int visited[vertexes];
+
+    // Initialize arrays
+    for (int i = 0; i < vertexes; i++)
+    {
+        visited[i] = 0;
+        weight[i] = INFINITY;
+        previous[i] = -1;
+    }
+    weight[source] = 0;
+
+    // Create a binary heap and insert the source vertex with weight 0
+    BinHeap *heap = createBinHeap(vertexes);
+    insertInBinHeap(heap, source, 0);
+
+    while (heap->actualSize > 0)
+    {
+        // Extract the vertex with the minimum weight from the binary heap
+        NodeInBinHeap minNode = extractMin(heap);
+        int minVertex = minNode.vertex;
+        visited[minVertex] = 1;
+
+        // Break out of the loop if the destination vertex is reached
+        if (minVertex == destination)
+            break;
+
+        // Traverse through all adjacent vertices of the minimum vertex
+        Edge *current = graph[minVertex]->next;
+        while (current != NULL)
+        {
+            int v = current->dest;
+            int w = current->weight;
+
+            // If vertex v is not visited and there's a shorter path to v through minVertex
+            if (!visited[v] && weight[minVertex] + w < weight[v])
+            {
+                // Update the shortest distance to v
+                weight[v] = weight[minVertex] + w;
+                previous[v] = minVertex;
+
+                // Update the weight of vertex v in the binary heap
+                insertInBinHeap(heap, v, weight[v]);
+            }
+            current = current->next;
+        }
+    }
+
+    // Print the shortest path from source to destination
+    if (*newline != 0)
+        printf("\n");
+    *newline = 1;
+    if (previous[destination] == -1)
+    {
+        printf("search %d %d failed", source, destination);
+        return;
+    }
+    printf("%d: [", weight[destination]);
+
+    printPath(previous, source, destination);
+
+    printf("]");
+
+    // Destroy the binary heap
+    destroyBinaryHeap(heap);
+}
+
+
+void ssearch(Graph **graph, int vertexes, int source, int destination, int *newline)
 {
 
     if(source == destination)
@@ -186,95 +355,6 @@ void search(Graph **graph, int vertexes, int source, int destination, int *newli
     printPath(previous, source, destination);
 
     printf("]");
-}
-
-
-
-void ssearch(Graph **graph, int vertexes, int source, int destination, int *newline)
-{
-    int weight[vertexes];
-    int previous[vertexes];
-    int visited[vertexes];
-
-    // Initialize arrays
-    for (int i = 0; i < vertexes; i++)
-    {
-        visited[i] = 0;
-        weight[i] = INFINITY;
-        previous[i] = -1;
-    }
-    weight[source] = 0;
-
-    // Initialize priority queue (using simple array)
-    int PriorityQueue[vertexes+1];
-
-    // Start from the source node
-    int rear = 0;
-    PriorityQueue[rear] = source; // dal som rear++ do riti
-//    rear++;
-
-    while(1)
-    {
-        // Find vertex with minimum weight in the priority queue
-        int minVertex = -1;
-        int minWeight = INFINITY;
-        for (int i = 0; i <= rear; i++)
-        {
-            if (!visited[PriorityQueue[i]] && weight[PriorityQueue[i]] < minWeight)
-            {
-                minVertex = PriorityQueue[i];
-                minWeight = weight[minVertex];
-            }
-        }
-
-        // If no unvisited vertex is found, break out of the loop
-        if (minVertex == -1)
-            break;
-
-        // Mark the minimum vertex as visited
-        visited[minVertex] = 1;
-
-        // Traverse through all adjacent vertices of the minimum vertex
-        Edge *current = graph[minVertex]->next;
-        while (current != NULL)
-        {
-            int v = current->dest;
-            int w = current->weight;
-
-            // If vertex v is not visited and there's a shorter path to v through minVertex
-            if (!visited[v] && weight[minVertex] + w < weight[v])
-            {
-                // Update the shortest distance to v
-                weight[v] = weight[minVertex] + w;
-                previous[v] = minVertex;
-
-                // Enqueue v to the priority queue
-                PriorityQueue[rear++] = v;
-            }
-            current = current->next;
-        }
-    }
-
-    // Print the shortest path from source to destination
-    if(*newline != 0)
-        printf("\n");
-    *newline = 1;
-    if (previous[destination] == -1)
-    {
-        printf("search %d %d failed", source, destination);
-        return;
-    }
-    printf("%d: [", weight[destination]);
-    if (destination == source)
-    {
-        printf("%d", source);
-    }
-    else
-    {
-        printPath(previous, source, destination);
-    }
-    printf("]");
-
 }
 void update(Graph **graph, int source, int destination, int newWeight, int *newline)
 {
@@ -421,6 +501,7 @@ int main()
 
     // Create the graph
     Graph **graph = createGraph(vertexes);
+    BinHeap *heap = createBinHeap(vertexes);
 
     // Insert edges
     for (int i = 0; i < edges; i++)
@@ -428,10 +509,7 @@ int main()
         scanf(" (%d , %d , %d)", &source, &destination, &weight);
         insertEdge(graph, source, destination, weight, &newLine);
         // visualizeGraph(graph, vertexes);
-//        printf("%d\n", i);
     }
-//    printf("\n");
-//    visualizeGraph(graph, vertexes);
     // Process queries
     char DO;
     while (scanf(" %c", &DO) == 1)
@@ -441,11 +519,6 @@ int main()
             case 's':
                 scanf(" %d %d", &source, &destination);
 //                visualizeGraph(graph, vertexes);
-//                if(source == 9 && destination == 1)
-//                {
-//                    printf("\n169: [9, 8, 1]");
-//                    break;
-//                }
                 search(graph, vertexes, source, destination, &newLine);
                 break;
             case 'i':
@@ -466,7 +539,7 @@ int main()
         }
     }
 
-    // Free memory for each graph
+    //// destroy elements ////
     for (int i = 0; i < vertexes; i++)
     {
         Edge *current = graph[i]->next;
@@ -478,8 +551,7 @@ int main()
         }
         free(graph[i]);
     }
-
-    // Free memory for the array of graphs
     free(graph);
+    free(heap);
     return 0;
 }
