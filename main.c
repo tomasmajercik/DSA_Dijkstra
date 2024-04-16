@@ -24,7 +24,7 @@ typedef struct NodeInBinHeap
 
 typedef struct BinHeap
 {
-    int capacity;
+//    int capacity;
     int actualSize;
     NodeInBinHeap *nodeInBinHeap;
 }BinHeap;
@@ -57,7 +57,7 @@ BinHeap *createBinHeap(int capacity)
     if (heap == NULL)
         exit(1);
 
-    heap->capacity = capacity*2;
+//    heap->capacity = capacity*2;
     heap->actualSize = 0;
     heap->nodeInBinHeap = (NodeInBinHeap *)malloc(2*capacity * sizeof(NodeInBinHeap));
 
@@ -256,6 +256,10 @@ void search(Graph **graph, int vertexes, int source, int destination, int *newli
             current = current->next;
         }
     }
+    // Destroy the binary heap
+    destroyBinaryHeap(heap);
+
+
 
     // Print the shortest path from source to destination
     if (*newline != 0)
@@ -272,8 +276,8 @@ void search(Graph **graph, int vertexes, int source, int destination, int *newli
 
     printf("]");
 
-    // Destroy the binary heap
-    destroyBinaryHeap(heap);
+
+
 }
 
 
